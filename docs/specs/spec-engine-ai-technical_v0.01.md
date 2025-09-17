@@ -32,12 +32,12 @@
 - Action selection (epsilon = 0.15):
   - With probability epsilon choose a random legal move.
   - Else choose argmax over Q(s,a) among legal moves; break ties uniformly at random.
-  - If no Q(s,·) exists, choose uniformly at random.
+  - If no Q(s,Â·) exists, choose uniformly at random.
 - Cold start: All Q(s,a) implicitly zero.
 
 ## 5. Learning Updates (end-of-game only)
 - Outcome reward R:
-  - Win: +1 applied to moves of winning side (but per requirements we update all moves with +1/-1 depending on winner/loser; draw gets small delta).
+  - Win: For a win, update all moves: assign +1 to moves made by the winning side and -1 to moves made by the losing side. For a draw, assign a small delta to all moves.
   - Loss: -1.
   - Draw: `delta = c * (4.5 - movesTaken) / 4.5` with `c = 0.2` for the game; apply to all moves.
 - Scaling & bounds:
