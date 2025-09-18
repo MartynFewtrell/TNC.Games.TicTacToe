@@ -26,8 +26,8 @@ public class NewSessionAndTurnTests : IClassFixture<WebApplicationFactory<Tnc.Ga
         Assert.True(doc.TryGetProperty("humanSymbol", out var hs));
         Assert.Equal("O", hs.GetString());
         Assert.True(doc.TryGetProperty("nextPlayer", out var np));
-        // If human is O and starter is AI, nextPlayer should be X
-        Assert.Equal("X", np.GetString());
+        // API applies AI starter move immediately; after AI (X) moves, nextPlayer will be the human 'O'
+        Assert.Equal("O", np.GetString());
     }
 
     [Fact]
