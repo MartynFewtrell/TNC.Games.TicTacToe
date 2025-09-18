@@ -1,0 +1,182 @@
+@page "/training"
+@using System.Net.Http.Headers
+@inject HttpClient Http
+
+<h3>Self-Play Training</h3>
+
+<div class="mb-3">
+    <label for="nInput">Number of games (max 10000)</label>
+    <input id="nInput" type="number" class="form-control" @bind="N" min="1" max="10000" />
+</div>
+<div class="mb-3">
+    <label for="seedInput">Seed (optional)</label>
+    <input id="seedInput" type="number" class="form-control" @bind="Seed" />
+</div>
+<button class="btn btn-primary" @onclick="StartJob" disabled="@running">Start Background Job</button>
+<button class="btn btn-secondary ms-2" @onclick="RunInline" disabled="@running">Run Inline</button>
+<button class="btn btn-danger ms-2" @onclick="CancelPolling" disabled="!running">Cancel Polling</button>
+
+@if (running)
+{
+    <p>Job running... Status: @jobStatus</p>
+    @if (jobId != null)
+    {
+        <p>Job id: @jobId</p>
+    }
+}
+
+@if (!string.IsNullOrEmpty(resultJson))
+{
+    <h4>Result</h4>
+    <pre>@resultJson</pre>
+}
+
+@code {
+    private int N { get; set; } = 1000;
+    private int? Seed { get; set; }
+    private bool running = false;
+    private string? resultJson;
+
+    // background job state
+    private Guid? jobId;
+    private string jobStatus = "";
+    private System.Threading.CancellationTokenSource? cts;
+
+    private async Task StartJob()
+    {
+        running = true;
+        resultJson = null;
+        jobId = null;
+        jobStatus = "Pending";
+        cts = new System.Threading.CancellationTokenSource();
+
+        try
+        {
+            var req = new { N = Math.Min(N, 10000), Seed };
+            var resp = await Http.PostAsJsonAsync("/api/v1/selfplay/start", req);
+            if (resp.StatusCode == System.Net.HttpStatusCode.Accepted || resp.IsSuccessStatusCode)
+            {
+                var body = await resp.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+                if (body.ValueKind != System.Text.Json.JsonValueKind.Undefined && body.TryGetProperty("jobId", out var j))
+                {
+                    if (Guid.TryParse(j.GetString(), out var parsed)) jobId = parsed;
+                }
+
+                // If Location header present, we can use it to poll
+                // start polling
+                if (jobId.HasValue)
+                {
+                    await PollJobStatus(jobId.Value, cts.Token);
+                }
+                else
+                {
+                    // try to read Location header for status URL
+                    if (resp.Headers.Location != null)
+                    {
+                        // extract id query param
+                        var q = System.Web.HttpUtility.ParseQueryString(resp.Headers.Location.Query);
+                        var id = q.Get("id");
+                        if (Guid.TryParse(id, out var parsed))
+                        {
+                            jobId = parsed;
+                            await PollJobStatus(jobId.Value, cts.Token);
+                        }
+                        else
+                        {
+                            resultJson = System.Text.Json.JsonSerializer.Serialize(body, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+                        }
+                    }
+                    else
+                    {
+                        resultJson = System.Text.Json.JsonSerializer.Serialize(body, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+                    }
+                }
+            }
+            else
+            {
+                var body = await resp.Content.ReadAsStringAsync();
+                resultJson = $"Failed to start job: {resp.StatusCode}\n{body}";
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            resultJson = "Polling cancelled.";
+        }
+        catch (Exception ex)
+        {
+            resultJson = ex.ToString();
+        }
+        finally
+        {
+            running = false;
+            cts?.Dispose();
+            cts = null;
+        }
+    }
+
+    private async Task PollJobStatus(Guid id, System.Threading.CancellationToken token)
+    {
+        jobStatus = "Running";
+        while (!token.IsCancellationRequested)
+        {
+            try
+            {
+                var resp = await Http.GetAsync($"/api/v1/selfplay/status?id={id}");
+                if (resp.IsSuccessStatusCode)
+                {
+                    var doc = await resp.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+                    jobStatus = doc.GetProperty("status").GetString() ?? jobStatus;
+                    // update partial result display
+                    resultJson = System.Text.Json.JsonSerializer.Serialize(doc, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+
+                    if (jobStatus == "Completed" || jobStatus == "Failed" || jobStatus == "Cancelled")
+                    {
+                        break;
+                    }
+                }
+                else
+                {
+                    // non-success, show body and stop
+                    var txt = await resp.Content.ReadAsStringAsync();
+                    resultJson = $"Status request failed: {resp.StatusCode}\n{txt}";
+                    break;
+                }
+            }
+            catch (OperationCanceledException) { break; }
+            catch (Exception ex)
+            {
+                resultJson = ex.ToString();
+                break;
+            }
+
+            // wait before next poll
+            await Task.Delay(500, token);
+        }
+    }
+
+    private async Task RunInline()
+    {
+        running = true;
+        resultJson = null;
+        try
+        {
+            var req = new { N = Math.Min(N, 10000), Seed };
+            var resp = await Http.PostAsJsonAsync("/api/v1/selfplay", req);
+            var doc = await resp.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+            resultJson = System.Text.Json.JsonSerializer.Serialize(doc, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        }
+        catch (Exception ex)
+        {
+            resultJson = ex.ToString();
+        }
+        finally
+        {
+            running = false;
+        }
+    }
+
+    private void CancelPolling()
+    {
+        cts?.Cancel();
+    }
+}

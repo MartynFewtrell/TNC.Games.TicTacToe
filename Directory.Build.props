@@ -1,0 +1,17 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>preview</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!-- Avoid failing build on certain transient NuGet resolution warnings while keeping the rest strict -->
+    <NoWarn>$(NoWarn);NU1603;NU1902</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Roslyn analyzers (Microsoft recommended) -->
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="7.0.0" PrivateAssets="all" />
+  </ItemGroup>
+</Project>
