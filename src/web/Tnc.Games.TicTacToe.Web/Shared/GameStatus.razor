@@ -1,0 +1,13 @@
+@using Microsoft.AspNetCore.Components
+
+<div class="game-status">
+    <p>Status: @Status</p>
+    <p>Next: @NextPlayer</p>
+    <p>Moves: @MoveCount</p>
+</div>
+
+@code {
+    [Parameter] public string? Status { get; set; }
+    [Parameter] public string? NextPlayer { get; set; }
+    [Parameter] public int MoveCount { get; set; }
+}

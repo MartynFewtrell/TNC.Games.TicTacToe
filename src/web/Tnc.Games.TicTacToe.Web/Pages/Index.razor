@@ -1,0 +1,228 @@
+﻿@page "/"
+@using System.Net.Http.Json
+@using Tnc.Games.TicTacToe.Web.Shared
+@inject HttpClient Http
+
+@code {
+    private string? sessionId;
+    private string[] board = Enumerable.Repeat("E", 9).ToArray();
+    private string status = "InProgress";
+    private string? nextPlayer = "X"; // assume human starts by default
+    private int moveCount = 0;
+    private int[] legalMoves = Enumerable.Range(0,9).ToArray();
+    private int[]? winningLine = null;
+    private string? errorMessage;
+
+    // Game options
+    private string starter = "Human"; // "Human" or "AI"
+    private string humanSymbol = "X"; // "X" or "O"
+
+    private bool IsHumanTurn => status == "InProgress" && (nextPlayer == null || nextPlayer == humanSymbol);
+    private bool IsGameOver => status != "InProgress";
+
+    private async Task HandleCellClick(int keypad)
+    {
+        errorMessage = null;
+        var req = new { Move = keypad };
+        var url = "/api/v1/turn" + (string.IsNullOrEmpty(sessionId) ? string.Empty : $"?sessionId={sessionId}");
+        var resp = await Http.PostAsJsonAsync(url, req);
+        if (resp.IsSuccessStatusCode)
+        {
+            var doc = await resp.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+            if (doc.TryGetProperty("sessionId", out var s)) sessionId = s.GetString();
+            if (doc.TryGetProperty("board", out var b) && b.ValueKind == System.Text.Json.JsonValueKind.Array)
+            {
+                var newBoard = Enumerable.Repeat("E", 9).ToArray();
+                int i = 0;
+                foreach (var el in b.EnumerateArray()) { if (i < 9) newBoard[i] = el.GetString() ?? "E"; i++; }
+                board = newBoard;
+            }
+            if (doc.TryGetProperty("status", out var st)) status = st.GetString() ?? status;
+            if (doc.TryGetProperty("nextPlayer", out var np)) nextPlayer = np.GetString();
+            if (doc.TryGetProperty("moveCount", out var mc)) moveCount = mc.GetInt32();
+            if (doc.TryGetProperty("winningLine", out var wl) && wl.ValueKind == System.Text.Json.JsonValueKind.Array)
+            {
+                var arr = new System.Collections.Generic.List<int>();
+                foreach (var el in wl.EnumerateArray()) arr.Add(el.GetInt32());
+                winningLine = arr.ToArray();
+            }
+            else
+            {
+                winningLine = null;
+            }
+
+            // compute legal moves from board
+            legalMoves = board.Select((v, idx) => v == "E" ? idx : -1).Where(x => x >= 0).ToArray();
+            StateHasChanged();
+        }
+        else if (resp.StatusCode == System.Net.HttpStatusCode.BadRequest)
+        {
+            // read error body and show legal moves if present
+            var content = await TryReadResponseContent(resp);
+            errorMessage = content ?? $"Bad request ({resp.StatusCode}) (API: {Http.BaseAddress})";
+            try
+            {
+                var err = await resp.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+                if (err.TryGetProperty("legalMoves", out var lm) && lm.ValueKind == System.Text.Json.JsonValueKind.Array)
+                {
+                    var list = new System.Collections.Generic.List<int>();
+                    foreach (var el in lm.EnumerateArray()) list.Add(el.GetInt32());
+                    legalMoves = list.ToArray();
+                }
+                // also update board if provided
+                if (err.TryGetProperty("board", out var b) && b.ValueKind == System.Text.Json.JsonValueKind.Array)
+                {
+                    var newBoard = Enumerable.Repeat("E", 9).ToArray();
+                    int i = 0;
+                    foreach (var el in b.EnumerateArray()) { if (i < 9) newBoard[i] = el.GetString() ?? "E"; i++; }
+                    board = newBoard;
+                }
+                if (err.TryGetProperty("winningLine", out var wl) && wl.ValueKind == System.Text.Json.JsonValueKind.Array)
+                {
+                    var arr = new System.Collections.Generic.List<int>();
+                    foreach (var el in wl.EnumerateArray()) arr.Add(el.GetInt32());
+                    winningLine = arr.ToArray();
+                }
+                else
+                {
+                    winningLine = null;
+                }
+            }
+            catch
+            {
+                // ignore JSON parse errors
+            }
+            StateHasChanged();
+        }
+        else
+        {
+            errorMessage = $"Unexpected response: {resp.StatusCode} (API: {Http.BaseAddress})";
+        }
+    }
+
+    private async Task<string?> TryReadResponseContent(HttpResponseMessage resp)
+    {
+        try
+        {
+            // Try JSON
+            var json = await resp.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+            if (json.ValueKind != System.Text.Json.JsonValueKind.Undefined)
+            {
+                if (json.TryGetProperty("message", out var msg)) return msg.GetString();
+                if (json.TryGetProperty("code", out var code)) return code.GetString();
+                return json.ToString();
+            }
+        }
+        catch
+        {
+            // ignore
+        }
+
+        try
+        {
+            var s = await resp.Content.ReadAsStringAsync();
+            if (!string.IsNullOrWhiteSpace(s)) return s;
+        }
+        catch
+        {
+            // ignore
+        }
+
+        return null;
+    }
+
+    private async Task NewGame()
+    {
+        try
+        {
+            // Call server endpoint to create session with options
+            var opts = new { Mode = "HvsAI", Starter = starter, HumanSymbol = humanSymbol };
+            var resp = await Http.PostAsJsonAsync("/api/v1/new", opts);
+            if (resp.IsSuccessStatusCode)
+            {
+                var doc = await resp.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+                if (doc.TryGetProperty("sessionId", out var s)) sessionId = s.GetString();
+                if (doc.TryGetProperty("board", out var b) && b.ValueKind == System.Text.Json.JsonValueKind.Array)
+                {
+                    var newBoard = Enumerable.Repeat("E", 9).ToArray();
+                    int i = 0;
+                    foreach (var el in b.EnumerateArray()) { if (i < 9) newBoard[i] = el.GetString() ?? "E"; i++; }
+                    board = newBoard;
+                }
+                if (doc.TryGetProperty("status", out var st)) status = st.GetString() ?? status;
+                if (doc.TryGetProperty("nextPlayer", out var np)) nextPlayer = np.GetString();
+                if (doc.TryGetProperty("moveCount", out var mc)) moveCount = mc.GetInt32();
+                if (doc.TryGetProperty("winningLine", out var wl) && wl.ValueKind == System.Text.Json.JsonValueKind.Array)
+                {
+                    var arr = new System.Collections.Generic.List<int>();
+                    foreach (var el in wl.EnumerateArray()) arr.Add(el.GetInt32());
+                    winningLine = arr.ToArray();
+                }
+                else
+                {
+                    winningLine = null;
+                }
+
+                legalMoves = board.Select((v, idx) => v == "E" ? idx : -1).Where(x => x >= 0).ToArray();
+                errorMessage = null;
+                StateHasChanged();
+            }
+            else
+            {
+                // Try read error details
+                var content = await TryReadResponseContent(resp);
+                if (!string.IsNullOrEmpty(content)) errorMessage = content + $" (API: {Http.BaseAddress})";
+                else errorMessage = $"Failed to create session: {resp.StatusCode} (API: {Http.BaseAddress})";
+
+                // fallback: local reset
+                sessionId = null;
+                board = Enumerable.Repeat("E", 9).ToArray();
+                status = "InProgress";
+                nextPlayer = humanSymbol;
+                moveCount = 0;
+                legalMoves = Enumerable.Range(0,9).ToArray();
+                winningLine = null;
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            errorMessage = $"Request error: {ex.Message} (API: {Http.BaseAddress})";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+    }
+}
+
+<h1>Tic Tac Toe</h1>
+
+<div class="mb-3">
+    <label>Starter:</label>
+    <select @bind="starter" class="form-select" style="width:150px;display:inline-block;margin-left:8px;">
+        <option value="Human">Human</option>
+        <option value="AI">AI</option>
+    </select>
+
+    <label style="margin-left:16px;">Human Symbol:</label>
+    <select @bind="humanSymbol" class="form-select" style="width:80px;display:inline-block;margin-left:8px;">
+        <option value="X">X</option>
+        <option value="O">O</option>
+    </select>
+
+    <button class="btn btn-primary" style="margin-left:16px;" @onclick="NewGame">New Game</button>
+</div>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@if (status == "WinX" || status == "WinO" || status == "Draw")
+{
+    var message = status == "WinX" ? "X wins!" : status == "WinO" ? "O wins!" : "Draw";
+    <div class="alert @(status == "Draw" ? "alert-info" : "alert-success")">@($"Game over - {message}")</div>
+}
+
+<BoardGrid Board="board" OnCellClick="HandleCellClick" Disabled="@(IsGameOver || !IsHumanTurn)" LegalMoves="legalMoves" WinningLine="winningLine" />
+<GameStatus Status="status" NextPlayer="nextPlayer" MoveCount="moveCount" />

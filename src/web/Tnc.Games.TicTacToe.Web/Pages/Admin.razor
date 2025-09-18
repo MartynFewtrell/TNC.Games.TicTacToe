@@ -1,0 +1,146 @@
+@page "/admin"
+@using System.Net.Http.Headers
+@using Microsoft.AspNetCore.Components.Forms
+@inject HttpClient Http
+
+<h3>Admin</h3>
+
+<div class="mb-3">
+    <label>Username</label>
+    <input class="form-control" @bind="Username" />
+</div>
+<div class="mb-3">
+    <label>Password</label>
+    <input type="password" class="form-control" @bind="Password" />
+</div>
+
+<div class="mb-3">
+    <button class="btn btn-danger" @onclick="ResetRankings">Reset Rankings</button>
+    <button class="btn btn-secondary" @onclick="ExportRankings">Export Rankings</button>
+    <button class="btn btn-secondary" @onclick="GetStats">Get Stats</button>
+</div>
+
+<div class="mb-3">
+    <label>Import Rankings (JSON)</label>
+    <InputFile OnChange="OnFileSelected" accept="application/json" />
+    <button class="btn btn-primary" @onclick="ImportRankings" disabled="@(selectedFile == null && string.IsNullOrEmpty(Username))">Import</button>
+</div>
+
+@if (exportJson is not null)
+{
+    <h4>Export</h4>
+    <pre>@exportJson</pre>
+}
+
+@if (statsJson is not null)
+{
+    <h4>Stats</h4>
+    <pre>@statsJson</pre>
+}
+
+@if (message is not null)
+{
+    <div class="alert alert-info">@message</div>
+}
+
+@code {
+    private string Username { get; set; } = string.Empty;
+    private string Password { get; set; } = string.Empty;
+    private string? exportJson;
+    private string? statsJson;
+    private string? message;
+    private IBrowserFile? selectedFile;
+
+    private AuthenticationHeaderValue? BuildAuthHeader()
+    {
+        if (!string.IsNullOrEmpty(Username) && !string.IsNullOrEmpty(Password))
+        {
+            var auth = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"{Username}:{Password}"));
+            return new AuthenticationHeaderValue("Basic", auth);
+        }
+        return null;
+    }
+
+    private async Task ResetRankings()
+    {
+        var auth = BuildAuthHeader();
+        using var req = new HttpRequestMessage(HttpMethod.Post, "/admin/rankings/reset");
+        if (auth != null) req.Headers.Authorization = auth;
+        var resp = await Http.SendAsync(req);
+        if (resp.IsSuccessStatusCode) message = "Rankings reset";
+        else message = $"Reset failed: {resp.StatusCode}";
+    }
+
+    private async Task ExportRankings()
+    {
+        var auth = BuildAuthHeader();
+        using var req = new HttpRequestMessage(HttpMethod.Get, "/admin/rankings/export");
+        if (auth != null) req.Headers.Authorization = auth;
+        var resp = await Http.SendAsync(req);
+        if (resp.IsSuccessStatusCode)
+        {
+            var doc = await resp.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+            exportJson = System.Text.Json.JsonSerializer.Serialize(doc, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            message = "Export successful";
+        }
+        else
+        {
+            message = $"Export failed: {resp.StatusCode}";
+        }
+    }
+
+    private async Task GetStats()
+    {
+        var auth = BuildAuthHeader();
+        using var req = new HttpRequestMessage(HttpMethod.Get, "/admin/stats");
+        if (auth != null) req.Headers.Authorization = auth;
+        var resp = await Http.SendAsync(req);
+        if (resp.IsSuccessStatusCode)
+        {
+            var doc = await resp.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+            statsJson = System.Text.Json.JsonSerializer.Serialize(doc, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            message = "Stats fetched";
+        }
+        else
+        {
+            message = $"Stats failed: {resp.StatusCode}";
+        }
+    }
+
+    private void OnFileSelected(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+    }
+
+    private async Task ImportRankings()
+    {
+        var auth = BuildAuthHeader();
+        string? json = null;
+        if (selectedFile != null)
+        {
+            using var stream = selectedFile.OpenReadStream(selectedFile.Size);
+            using var reader = new System.IO.StreamReader(stream);
+            json = await reader.ReadToEndAsync();
+        }
+        else
+        {
+            json = await JSPromptForJson();
+        }
+
+        if (string.IsNullOrEmpty(json)) { message = "Import cancelled"; return; }
+
+        using var req = new HttpRequestMessage(HttpMethod.Post, "/admin/rankings/import");
+        if (auth != null) req.Headers.Authorization = auth;
+        req.Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+        var resp = await Http.SendAsync(req);
+        if (resp.IsSuccessStatusCode) message = "Import successful";
+        else message = $"Import failed: {resp.StatusCode}";
+    }
+
+    // Simple JS interop to prompt for pasted JSON (this uses browser prompt for simplicity)
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+    private async Task<string?> JSPromptForJson()
+    {
+        return await JS.InvokeAsync<string?>("prompt", "Paste rankings JSON to import:");
+    }
+}
