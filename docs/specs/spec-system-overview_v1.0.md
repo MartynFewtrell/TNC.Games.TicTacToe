@@ -2,7 +2,7 @@
 
 Supersedes: spec-system-overview_v0.01.md
 
-Version: v1.0 — First stage completed
+Version: v1.0 â€” First stage completed
 
 Overview
 - TNC.Games.TicTacToe implements a tic-tac-toe game with a backend API, an in-memory Q-table based learning policy, and a Blazor-based web UI.
