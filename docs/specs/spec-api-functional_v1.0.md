@@ -2,22 +2,22 @@
 
 Supersedes: spec-api-functional_v0.01.md
 
-Version: v1.0 — First stage completed
+Version: v1.0 â€” First stage completed
 
 Summary
 - Minimal API exposing endpoints for gameplay, state retrieval, self-play training, and admin operations.
 
 Endpoints
-- `POST /api/v1/new` — create a new game session. Accepts JSON options: `Mode`, `Starter` (Human|AI), `HumanSymbol` (X|O). Returns sessionId, board, nextPlayer, status, moveCount, humanSymbol, winningLine.
-- `POST /api/v1/turn` — apply a human move. Accepts `sessionId` query or creates a new session if missing. Request body: `{ "Move": <1-9 or 0-8> }`. Returns updated state and applied moves.
-- `GET /api/v1/state` — returns session state given `sessionId` query parameter.
-- `POST /api/v1/selfplay` — runs N self-play games (cap 10k) updating Q-table.
+- `POST /api/v1/new` â€” create a new game session. Accepts JSON options: `Mode`, `Starter` (Human|AI), `HumanSymbol` (X|O). Returns sessionId, board, nextPlayer, status, moveCount, humanSymbol, winningLine.
+- `POST /api/v1/turn` â€” apply a human move. Accepts `sessionId` query or creates a new session if missing. Request body: `{ "Move": <1-9 or 0-8> }`. Returns updated state and applied moves.
+- `GET /api/v1/state` â€” returns session state given `sessionId` query parameter.
+- `POST /api/v1/selfplay` â€” runs N self-play games (cap 10k) updating Q-table.
 
 Admin Endpoints (Basic Auth)
-- `POST /admin/rankings/reset` — reset Q-table store.
-- `GET /admin/rankings/export` — export Q-table as JSON.
-- `POST /admin/rankings/import` — import Q-table JSON.
-- `GET /admin/stats` — simple stats for rankings.
+- `POST /admin/rankings/reset` â€” reset Q-table store.
+- `GET /admin/rankings/export` â€” export Q-table as JSON.
+- `POST /admin/rankings/import` â€” import Q-table JSON.
+- `GET /admin/stats` â€” simple stats for rankings.
 
 Behavioral notes
 - When `Starter=AI`, the API applies one AI starter move immediately and returns the updated board and nextPlayer to the client.
