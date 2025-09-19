@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 using Tnc.Games.TicTacToe.Api.Domain;
 using Tnc.Games.TicTacToe.Shared;
 
@@ -11,10 +12,12 @@ namespace Tnc.Games.TicTacToe.Api.Infrastructure
         private readonly double _min = -5.0;
         private readonly double _max = 5.0;
         private readonly bool _compatProbeOnRead;
+        private readonly ILogger<RankingStoreMemory>? _logger;
 
-        public RankingStoreMemory(bool compatProbeOnRead = false)
+        public RankingStoreMemory(bool compatProbeOnRead = false, ILogger<RankingStoreMemory>? logger = null)
         {
             _compatProbeOnRead = compatProbeOnRead;
+            _logger = logger;
         }
 
         public double? Get(string stateKey, int moveIndex)
@@ -22,6 +25,13 @@ namespace Tnc.Games.TicTacToe.Api.Infrastructure
             if (_store.TryGetValue((stateKey, moveIndex), out var v)) return v;
 
             if (!_compatProbeOnRead) return null;
+
+            // Basic validation: ensure key looks sane before attempting probe
+            if (string.IsNullOrEmpty(stateKey) || stateKey.Length != 9)
+            {
+                _logger?.LogDebug("RankingStoreMemory.Get: skipping compat probe for invalid stateKey='{stateKey}'", stateKey);
+                return null;
+            }
 
             // Probe symmetric variants (compatibility mode). If a matching value is found under a symmetric key/move,
             // re-store it under the requested canonical key for future fast reads.
@@ -39,13 +49,24 @@ namespace Tnc.Games.TicTacToe.Api.Infrastructure
                     {
                         // re-store under canonical key
                         _store[(stateKey, moveIndex)] = vv;
+                        _logger?.LogInformation("RankingStoreMemory: migrated value from variantKey={variantKey},variantMove={variantMove} to canonical {stateKey},{moveIndex}", variantKey, variantMove, stateKey, moveIndex);
                         return vv;
                     }
                 }
             }
-            catch
+            catch (System.ArgumentException argEx)
             {
-                // on any error, just return null
+                // BoardEncoding/MapMoveIndex may throw for malformed input
+                _logger?.LogDebug(argEx, "RankingStoreMemory compatibility probe failed due to argument issue for stateKey={stateKey}", stateKey);
+            }
+            catch (System.IndexOutOfRangeException ioEx)
+            {
+                _logger?.LogDebug(ioEx, "RankingStoreMemory compatibility probe failed due to index issue for stateKey={stateKey}", stateKey);
+            }
+            catch (System.Exception ex)
+            {
+                // Unexpected error: log at warning level but preserve previous behavior by returning null
+                _logger?.LogWarning(ex, "RankingStoreMemory compatibility probe encountered unexpected error for stateKey={stateKey}", stateKey);
             }
 
             return null;
