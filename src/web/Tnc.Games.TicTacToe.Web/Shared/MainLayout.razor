@@ -1,17 +1,14 @@
 ﻿@inherits LayoutComponentBase
 
-<PageTitle>Tnc.Games.TicTacToe.Web</PageTitle>
+<PageTitle>Tic Tac Toe</PageTitle>
 
+<a href="#main-content" class="skip-link">Skip to main content</a>
 <div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+    <header>
+        <TopNav />
+    </header>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
-        </div>
-
+    <main id="main-content" tabindex="-1">
         <article class="content px-4">
             @Body
         </article>

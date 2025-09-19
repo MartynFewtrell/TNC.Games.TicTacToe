@@ -1,5 +1,8 @@
 # TNC.Games.TicTacToe
 
+> Experimental Project Notice  
+> This repository is an experimental sandbox. All source code and documentation content were generated using GitHub Copilot. The outputs are provided **as-is** for learning, prototyping, and demonstration purposes and have not undergone production hardening (security review, performance tuning, or exhaustive testing). Use with caution for any production scenario.
+
 A Tic Tac Toe game backend + web UI with a simple AI and learning Q-table.
 
 ## Prerequisites

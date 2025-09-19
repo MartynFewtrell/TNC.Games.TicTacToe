@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Tnc.Games.TicTacToe.Web.Data;
 using System.Net.Http;
 using Microsoft.Extensions.Configuration;
+using Tnc.Games.TicTacToe.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,13 +26,16 @@ builder.Services.AddScoped(sp =>
     return new HttpClient { BaseAddress = new Uri(nav.BaseUri) };
 });
 
+// Theme service
+builder.Services.AddScoped<ThemeService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/dotnet-support-policy.
     app.UseHsts();
 }
 

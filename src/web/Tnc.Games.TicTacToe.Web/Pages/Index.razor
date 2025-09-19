@@ -195,34 +195,37 @@
     }
 }
 
-<h1>Tic Tac Toe</h1>
+<div class="play-area">
+    <h1 class="title">Tic Tac Toe</h1>
 
-<div class="mb-3">
-    <label>Starter:</label>
-    <select @bind="starter" class="form-select" style="width:150px;display:inline-block;margin-left:8px;">
-        <option value="Human">Human</option>
-        <option value="AI">AI</option>
-    </select>
+    <div class="controls">
+        <div class="control-group">
+            <label>Starter:</label>
+            <select @bind="starter" class="form-select starter-select">
+                <option value="Human">Human</option>
+                <option value="AI">AI</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label>Human Symbol:</label>
+            <select @bind="humanSymbol" class="form-select symbol-select">
+                <option value="X">X</option>
+                <option value="O">O</option>
+            </select>
+        </div>
+        <button class="btn btn-primary" @onclick="NewGame">New Game</button>
+    </div>
 
-    <label style="margin-left:16px;">Human Symbol:</label>
-    <select @bind="humanSymbol" class="form-select" style="width:80px;display:inline-block;margin-left:8px;">
-        <option value="X">X</option>
-        <option value="O">O</option>
-    </select>
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger feedback">@errorMessage</div>
+    }
 
-    <button class="btn btn-primary" style="margin-left:16px;" @onclick="NewGame">New Game</button>
+    @if (status == "WinX" || status == "WinO" || status == "Draw")
+    {
+        var message = status == "WinX" ? "X wins!" : status == "WinO" ? "O wins!" : "Draw";
+        <div class="alert @(status == "Draw" ? "alert-info" : "alert-success") feedback">@($"Game over - {message}")</div>
+    }
+
+    <BoardGrid Board="board" OnCellClick="HandleCellClick" Disabled="@(IsGameOver || !IsHumanTurn)" LegalMoves="legalMoves" WinningLine="winningLine" />
 </div>
-
-@if (!string.IsNullOrEmpty(errorMessage))
-{
-    <div class="alert alert-danger">@errorMessage</div>
-}
-
-@if (status == "WinX" || status == "WinO" || status == "Draw")
-{
-    var message = status == "WinX" ? "X wins!" : status == "WinO" ? "O wins!" : "Draw";
-    <div class="alert @(status == "Draw" ? "alert-info" : "alert-success")">@($"Game over - {message}")</div>
-}
-
-<BoardGrid Board="board" OnCellClick="HandleCellClick" Disabled="@(IsGameOver || !IsHumanTurn)" LegalMoves="legalMoves" WinningLine="winningLine" />
-<GameStatus Status="status" NextPlayer="nextPlayer" MoveCount="moveCount" />

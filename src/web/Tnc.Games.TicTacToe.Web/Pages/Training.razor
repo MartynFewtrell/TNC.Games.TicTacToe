@@ -2,34 +2,45 @@
 @using System.Net.Http.Headers
 @inject HttpClient Http
 
-<h3>Self-Play Training</h3>
+<div class="page-shell">
+    <h1>Self-Play Training</h1>
+    <p class="intro">This page runs automated self-play sessions to gather statistics and evaluate AI strategies. Future updates will visualise aggregate win/draw rates, opening effectiveness, and move quality heatmaps.</p>
 
-<div class="mb-3">
-    <label for="nInput">Number of games (max 100000)</label>
-    <input id="nInput" type="number" class="form-control" @bind="N" min="1" max="100000" />
-</div>
-<div class="mb-3">
-    <label for="seedInput">Seed (optional)</label>
-    <input id="seedInput" type="number" class="form-control" @bind="Seed" />
-</div>
-<button class="btn btn-primary" @onclick="StartJob" disabled="@running">Start Background Job</button>
-<button class="btn btn-secondary ms-2" @onclick="RunInline" disabled="@running">Run Inline</button>
-<button class="btn btn-danger ms-2" @onclick="CancelPolling" disabled="!running">Cancel Polling</button>
+    <div class="form-grid">
+        <div class="field">
+            <label for="nInput">Number of games (max 100000)</label>
+            <input id="nInput" type="number" class="form-control" @bind="N" min="1" max="100000" />
+        </div>
+        <div class="field">
+            <label for="seedInput">Seed (optional)</label>
+            <input id="seedInput" type="number" class="form-control" @bind="Seed" />
+        </div>
+    </div>
 
-@if (running)
-{
-    <p>Job running... Status: @jobStatus</p>
-    @if (jobId != null)
+    <div class="actions">
+        <button class="btn btn-primary" @onclick="StartJob" disabled="@running">Start Background Job</button>
+        <button class="btn btn-secondary" @onclick="RunInline" disabled="@running">Run Inline</button>
+        <button class="btn btn-danger" @onclick="CancelPolling" disabled="!running">Cancel Polling</button>
+    </div>
+
+    @if (running)
     {
-        <p>Job id: @jobId</p>
+        <p class="status">Job running... Status: @jobStatus @if (jobId != null){<span>(@jobId)</span>}</p>
     }
-}
 
-@if (!string.IsNullOrEmpty(resultJson))
-{
-    <h4>Result</h4>
-    <pre>@resultJson</pre>
-}
+    @if (!string.IsNullOrEmpty(resultJson))
+    {
+        <div class="result-block">
+            <h2>Result</h2>
+            <pre>@resultJson</pre>
+        </div>
+    }
+
+    @if (running == false && string.IsNullOrEmpty(resultJson))
+    {
+        <p class="status placeholder">Results will appear here after a job completes.</p>
+    }
+</div>
 
 @code {
     private int N { get; set; } = 1000;

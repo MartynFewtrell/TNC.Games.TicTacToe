@@ -11,6 +11,50 @@
     <base href="~/" />
     <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />
     <link href="css/site.css" rel="stylesheet" />
+
+    <script>
+        // Theme boot: set data-theme early to avoid flash
+        (function(){
+            window.tttTheme = {
+                get: function(){ try{ return localStorage.getItem('ttt-theme'); }catch(e){ return null; } },
+                set: function(v){ try{ localStorage.setItem('ttt-theme', v); }catch(e){} },
+                setAttr: function(v){ try{ document.documentElement.setAttribute('data-theme', v); }catch(e){} }
+            };
+            var theme = window.tttTheme.get();
+            if (!theme) {
+                try {
+                    theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                } catch(e) { theme = 'light'; }
+            }
+            window.tttTheme.setAttr(theme);
+        })();
+
+        // Simple focus helper for drawer
+        window.blazorFocus = (id) => {
+            try {
+                var el = document.getElementById(id);
+                if (el) el.focus();
+            } catch(e) { }
+        };
+
+        // Helper functions for focus trap and body scroll lock
+        window.setBodyScrollLocked = (locked) => {
+            if (locked) { document.body.style.overflow = 'hidden'; }
+            else { document.body.style.overflow = ''; }
+        };
+        window.getFocusableIds = (rootId) => {
+            var root = document.getElementById(rootId);
+            if(!root) return [];
+            var selectors = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+            return Array.from(root.querySelectorAll(selectors))
+                        .filter(el => el.offsetParent !== null)
+                        .map(el => { if(!el.id){ el.id = 'f-' + Math.random().toString(36).slice(2); } return el.id; });
+        };
+        window.getActiveElementId = () => document.activeElement ? document.activeElement.id : null;
+        window.focusElementById = (id) => { var el = document.getElementById(id); if(el) el.focus(); };
+    </script>
+
+    <link href="css/theme.css" rel="stylesheet" />
     <link href="Tnc.Games.TicTacToe.Web.styles.css" rel="stylesheet" />
     <link rel="icon" type="image/png" href="favicon.png"/>
     <component type="typeof(HeadOutlet)" render-mode="ServerPrerendered" />

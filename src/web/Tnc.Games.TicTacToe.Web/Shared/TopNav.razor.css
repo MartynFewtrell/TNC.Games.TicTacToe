@@ -1,0 +1,29 @@
+/* Simplified TopNav CSS removing unused/legacy selectors */
+.top-nav { display:block; width:100%; background:linear-gradient(90deg,#1e3a8a,#1d4ed8); border-bottom:1px solid #15326b; color:#fff; }
+html[data-theme=dark] .top-nav { background: var(--color-surface); border-bottom:1px solid var(--color-border); color:var(--color-text); }
+.top-nav .container { display:flex; align-items:center; gap:var(--space-2); padding:.55rem 1rem; }
+.brand-link { font-weight:600; color:#fff; text-decoration:none; font-size:1.15rem; }
+html[data-theme=dark] .top-nav .brand-link { color: var(--color-text); }
+.links { display:flex; gap:1rem; margin-left:1.5rem; }
+.nav-link { color:#fff !important; text-decoration:none; padding:.55rem .85rem; border-radius:var(--radius-sm); font-weight:600; letter-spacing:.25px; position:relative; transition:background .15s ease,color .15s ease; }
+html[data-theme=dark] .top-nav .nav-link { color: var(--color-text) !important; font-weight:500; }
+.nav-link.active { color:#fff !important; }
+html[data-theme=dark] .top-nav .nav-link.active { color: var(--color-accent) !important; }
+.nav-link.active::after { content:""; position:absolute; left:8px; right:8px; bottom:4px; height:3px; border-radius:2px; background:#fff; }
+html[data-theme=dark] .top-nav .nav-link.active::after { background: var(--color-accent); }
+.nav-link:hover { background:rgba(255,255,255,0.22); }
+html[data-theme=dark] .top-nav .nav-link:hover { background: var(--color-surface-alt); }
+.nav-link:focus-visible { outline:2px solid #fff; outline-offset:2px; }
+html[data-theme=dark] .top-nav .nav-link:focus-visible { outline:2px solid var(--color-focus-ring); }
+.actions { margin-left:auto; display:flex; gap:.6rem; align-items:center; }
+.theme-toggle-btn { background:rgba(255,255,255,0.18); color:#fff; border:1px solid rgba(255,255,255,0.35); padding:.5rem .95rem; font-size:.8rem; font-weight:600; line-height:1; border-radius:var(--radius-sm); cursor:pointer; transition:background .15s ease,color .15s ease,border-color .15s ease; }
+.theme-toggle-btn:hover { background:rgba(255,255,255,0.30); }
+.theme-toggle-btn:focus-visible { outline:2px solid #fff; outline-offset:2px; }
+html[data-theme=dark] .top-nav .theme-toggle-btn { background: var(--color-surface-alt); color: var(--color-text); border:1px solid var(--color-border); font-weight:500; }
+html[data-theme=dark] .top-nav .theme-toggle-btn:hover { background: var(--color-accent); color:#fff; border-color: var(--color-accent-active); }
+.hamburger-btn { display:none; background:none; border:1px solid rgba(255,255,255,0.35); padding:6px 8px; border-radius:var(--radius-sm); cursor:pointer; align-items:center; justify-content:center; flex-direction:column; width:42px; height:38px; gap:4px; }
+.hamburger-btn .bar { display:block; width:22px; height:2px; background:#fff; border-radius:2px; }
+html[data-theme=dark] .hamburger-btn { border-color: var(--color-border); }
+html[data-theme=dark] .hamburger-btn .bar { background: var(--color-text); }
+.hamburger-btn:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:2px; }
+@media (max-width:768px){ .hamburger-btn { display:inline-flex; } .links { display:none; } .desktop-only { display:none !important; } }
