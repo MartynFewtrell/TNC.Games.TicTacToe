@@ -66,14 +66,26 @@ app.MapGet("/", () => "Tic Tac Toe API");
 app.MapGameplayEndpoints();
 app.MapSelfPlayEndpoints();
 
-// Admin endpoints
+// Admin endpoints (Basic auth protected). Provide both /admin/* and /api/v1/admin/* for compatibility with spec and UI.
 app.MapPost("/admin/rankings/reset", [Microsoft.AspNetCore.Authorization.Authorize] (IRankingStore store) =>
 {
     store.Reset();
     return Results.Ok(new { status = "reset" });
 });
 
+app.MapPost("/api/v1/admin/rankings/reset", [Microsoft.AspNetCore.Authorization.Authorize] (IRankingStore store) =>
+{
+    store.Reset();
+    return Results.NoContent();
+});
+
 app.MapGet("/admin/rankings/export", [Microsoft.AspNetCore.Authorization.Authorize] (IRankingStore store) =>
+{
+    var exported = store.Export();
+    return Results.Ok(exported);
+});
+
+app.MapGet("/api/v1/admin/rankings/export", [Microsoft.AspNetCore.Authorization.Authorize] (IRankingStore store) =>
 {
     var exported = store.Export();
     return Results.Ok(exported);
@@ -86,9 +98,27 @@ app.MapPost("/admin/rankings/import", [Microsoft.AspNetCore.Authorization.Author
     return Results.Ok(new { status = "imported" });
 });
 
+app.MapPost("/api/v1/admin/rankings/import", [Microsoft.AspNetCore.Authorization.Authorize] async (HttpContext http, IRankingStore store) =>
+{
+    var doc = await System.Text.Json.JsonSerializer.DeserializeAsync<System.Text.Json.JsonElement>(http.Request.Body);
+    store.ImportReplace(doc);
+    return Results.Ok(new { status = "imported" });
+});
+
 app.MapGet("/admin/stats", [Microsoft.AspNetCore.Authorization.Authorize] (IRankingStore store) =>
 {
     // Simple stats: number of entries
+    var exported = store.Export();
+    int count = 0;
+    if (exported is System.Collections.IEnumerable e)
+    {
+        foreach (var _ in e) count++;
+    }
+    return Results.Ok(new { entries = count });
+});
+
+app.MapGet("/api/v1/admin/stats", [Microsoft.AspNetCore.Authorization.Authorize] (IRankingStore store) =>
+{
     var exported = store.Export();
     int count = 0;
     if (exported is System.Collections.IEnumerable e)

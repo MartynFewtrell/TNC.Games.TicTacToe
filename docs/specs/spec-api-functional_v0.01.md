@@ -66,7 +66,7 @@
 - `POST /api/v1/selfplay`
 - Purpose: Run N AI-vs-AI games sequentially to train rankings.
 - Request:
-  - `n`: integer (required). Server caps at 10,000.
+  - `n`: integer (required). Server caps at 100,000.
   - `seed`: integer (optional). If provided, random generator seeded; else time-based.
 - Response 202/200 OK:
   - `requested`: n
@@ -137,7 +137,7 @@
 ## 9. Non-Functional
 - CORS: dev allow any; non-prod/prod restrict to configured UI origin(s).
 - Telemetry: OpenTelemetry (logs/metrics/traces) - see observability spec.
-- Performance: single API instance; self-play runs sequentially; cap N at 10k.
+- Performance: single API instance; self-play runs sequentially; cap N at 100k.
 
 ## 10. Open Questions
 - Should `GET /state` also include full history? (UI currently does not need.)

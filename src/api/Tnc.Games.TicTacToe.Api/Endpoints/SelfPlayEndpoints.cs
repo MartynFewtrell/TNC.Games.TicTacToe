@@ -67,7 +67,7 @@ namespace Tnc.Games.TicTacToe.Api.Endpoints
             // New background job API: start job
             app.MapPost("/api/v1/selfplay/start", (SelfPlayRequest req, SelfPlayJobQueue queue) =>
             {
-                var job = queue.Create(Math.Min(req.N, 10000));
+                var job = queue.Create(Math.Min(req.N, 100000));
                 job.Status = SelfPlayJobStatus.Pending;
 
                 // Kick off background work
@@ -131,7 +131,7 @@ namespace Tnc.Games.TicTacToe.Api.Endpoints
         {
             // Copy of previous inline implementation
             var logger = app.Logger;
-            var n = Math.Min(req.N, 10000);
+            var n = Math.Min(req.N, 100000);
             var seed = req.Seed;
 
             var sw = Stopwatch.StartNew();
@@ -163,7 +163,7 @@ namespace Tnc.Games.TicTacToe.Api.Endpoints
                         var legalMoves = BoardEncoding.GetLegalMoves(boardStrings);
                         var stateKey = BoardEncoding.ToStateKey(boardStrings);
 
-                        var move = policy.SelectMove(stateKey, legalMoves, rankingStore);
+                        var move = policy.SelectMove(state, rankingStore);
 
                         if (state.NextPlayer == Engine.Player.X)
                         {
