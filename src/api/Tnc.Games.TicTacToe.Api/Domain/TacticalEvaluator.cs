@@ -17,7 +17,7 @@ namespace Tnc.Games.TicTacToe.Api.Domain
 
             foreach (var m in legalMoves)
             {
-                var copy = CloneState(state);
+                var copy = state.Clone();
                 Rules.ApplyMove(copy, m, currentPlayer);
                 // Check if this results in a win for current player
                 if ((currentPlayer == Player.X && copy.Status == Engine.GameStatus.WinX) ||
@@ -46,7 +46,7 @@ namespace Tnc.Games.TicTacToe.Api.Domain
             // If opponent has no immediate winning moves after m, m is a valid block.
             foreach (var m in legalMoves)
             {
-                var copy = CloneState(state);
+                var copy = state.Clone();
                 Rules.ApplyMove(copy, m, currentPlayer);
                 // If game already ended (win/draw) after our move, then it prevents opponent wins
                 if (copy.Status != Engine.GameStatus.InProgress)
@@ -60,7 +60,7 @@ namespace Tnc.Games.TicTacToe.Api.Domain
                 bool opponentHasImmediateWin = false;
                 foreach (var om in oppLegal)
                 {
-                    var copy2 = CloneState(copy);
+                    var copy2 = copy.Clone();
                     Rules.ApplyMove(copy2, om, opponent);
                     if ((opponent == Player.X && copy2.Status == Engine.GameStatus.WinX) ||
                         (opponent == Player.O && copy2.Status == Engine.GameStatus.WinO))
@@ -81,12 +81,37 @@ namespace Tnc.Games.TicTacToe.Api.Domain
             return false;
         }
 
-        private static GameState CloneState(GameState src)
+        private static RevertInfo ApplyMoveRecorded(GameState state, int index, Player player)
         {
-            return new GameState((Cell[])src.Board.Clone(), src.NextPlayer, src.Status, new System.Collections.Generic.List<int>(src.MoveHistory))
-            {
-                HumanPlayer = src.HumanPlayer
-            };
+            // Record previous values to enable revert
+            var prevCell = state.Board[index];
+            var prevStatus = state.Status;
+            var prevNext = state.NextPlayer;
+            var prevCount = state.MoveHistory?.Count ?? 0;
+
+            Rules.ApplyMove(state, index, player);
+
+            return new RevertInfo(prevCell, prevStatus, prevNext, prevCount);
         }
+
+        private static void RevertMove(GameState state, int index, RevertInfo info)
+        {
+            // revert board cell
+            state.Board[index] = info.PrevCell;
+            // revert next player
+            state.NextPlayer = info.PrevNext;
+            // revert status
+            state.Status = info.PrevStatus;
+            // revert move history
+            if (state.MoveHistory != null)
+            {
+                while (state.MoveHistory.Count > info.PrevHistoryCount)
+                {
+                    state.MoveHistory.RemoveAt(state.MoveHistory.Count - 1);
+                }
+            }
+        }
+
+        private readonly record struct RevertInfo(Cell PrevCell, Tnc.Games.TicTacToe.Api.Engine.GameStatus PrevStatus, Player PrevNext, int PrevHistoryCount);
     }
 }
