@@ -1,0 +1,109 @@
+/* Theme tokens - Light + Dark (updated for stronger light contrast) */
+:root {
+  /* Neutral scale */
+  --gray-50: #ffffff; /* switched to pure white for background */
+  --gray-75: #f8fafc; /* former gray-50 retained as subtle alt */
+  --gray-100: #f1f5f9;
+  --gray-150: #e2e8f0; /* was 150/200 lighten alt surface */
+  --gray-200: #dbe2ea;
+  --gray-300: #c3ced9; /* slightly darker than original for clearer border */
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --gray-900: #0f1724;
+
+  /* Accent (tuned a bit stronger) */
+  --blue-300: #93c5fd;
+  --blue-400: #60a5fa;
+  --blue-500: #3b82f6;
+  --blue-600: #1d4ed8; /* stronger primary */
+  --blue-650: #1e40af; /* active / pressed */
+  --blue-700: #1d3d9e;
+
+  /* Semantic tokens (Light) */
+  --color-background: var(--gray-50);
+  --color-surface: var(--gray-100);
+  --color-surface-alt: var(--gray-150); /* more distinct from surface */
+  --color-border: var(--gray-300);      /* higher contrast border */
+  --color-text: var(--gray-900);        /* darker for stronger readability */
+  --color-text-muted: var(--gray-600);
+  --color-text-strong: var(--gray-900);
+  --color-accent: var(--blue-600);
+  --color-accent-hover: var(--blue-500);
+  --color-accent-active: var(--blue-650);
+  --color-focus-ring: var(--blue-500);
+  --color-win-highlight: var(--blue-300);
+
+  /* Spacing & radius */
+  --radius-sm: 4px;
+  --space-2: 8px;
+  --space-4: 16px;
+}
+
+/* Form controls unified styling */
+input[type="text"],
+input[type="number"],
+input[type="password"],
+select,
+textarea {
+  background: var(--color-surface) !important;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.45rem 0.6rem;
+  font-size: 0.9rem;
+  line-height: 1.25rem;
+  box-shadow: none;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+/* Dark theme overrides */
+:root[data-theme="dark"], [data-theme="dark"] {
+  --color-background: #0f1724;
+  --color-surface: #111827;
+  --color-surface-alt: #1e293b;
+  --color-border: #273449;
+  --color-text: #e6eef8;
+  --color-text-muted: #9aa6b2;
+  --color-text-strong: #ffffff;
+  --color-accent: #60a5fa;
+  --color-accent-hover: #93c5fd;
+  --color-accent-active: #3b82f6;
+  --color-focus-ring: #93c5fd;
+  --color-win-highlight: #1e3a8a;
+}
+
+:root[data-theme="dark"] input[type="text"],
+:root[data-theme="dark"] input[type="number"],
+:root[data-theme="dark"] input[type="password"],
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] textarea,
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="number"],
+[data-theme="dark"] input[type="password"],
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background: var(--color-surface-alt) !important;
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+/* Body */
+body {
+  background: var(--color-background);
+  color: var(--color-text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}

@@ -1,0 +1,79 @@
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@inject Tnc.Games.TicTacToe.Web.Services.ThemeService ThemeService
+@inject IJSRuntime JS
+
+<nav class="top-nav" role="navigation" aria-label="Primary">
+  <div class="container">
+    <button id="hamburgerBtn" class="hamburger-btn" @onclick="ToggleDrawer" aria-label="Menu" aria-controls="mobileNavDrawer" aria-expanded="@(drawerOpen.ToString().ToLower())">
+      <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+    </button>
+
+    <div class="brand">
+      <a class="brand-link" href="/">Tic Tac Toe</a>
+    </div>
+
+    <div class="links">
+      <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">Play</NavLink>
+      <NavLink class="nav-link" href="/how-to-play">How to Play</NavLink>
+      <NavLink class="nav-link" href="/training">Training</NavLink>
+      <NavLink class="nav-link" href="/admin">Admin</NavLink>
+    </div>
+
+    <div class="actions desktop-only">
+      <button class="theme-toggle-btn" @onclick="ToggleTheme" aria-label="Toggle color theme" title="Toggle color theme" data-theme-btn>
+          @toggleLabel
+      </button>
+    </div>
+  </div>
+</nav>
+
+<MobileMenuDrawer Open="drawerOpen"
+                  OnClose="HandleDrawerClosed"
+                  ToggleTheme="ToggleTheme"
+                  ThemeLabel="@toggleLabel" />
+
+@code {
+    private string currentTheme = "light";
+    private string toggleLabel = "Dark"; // indicates action (switch to Dark)
+    private bool drawerOpen = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentTheme = await ThemeService.GetThemeAsync();
+        UpdateToggleLabel();
+    }
+
+    private void UpdateToggleLabel()
+    {
+        toggleLabel = currentTheme == "dark" ? "Light" : "Dark";
+        StateHasChanged();
+    }
+
+    private async Task ToggleTheme()
+    {
+        currentTheme = currentTheme == "dark" ? "light" : "dark";
+        await ThemeService.SetThemeAsync(currentTheme);
+        UpdateToggleLabel();
+    }
+
+    private async Task ToggleDrawer()
+    {
+        drawerOpen = !drawerOpen;
+        await UpdateBodyScroll();
+    }
+
+    private async Task HandleDrawerClosed()
+    {
+        drawerOpen = false;
+        await UpdateBodyScroll();
+        // return focus to hamburger
+        await JS.InvokeVoidAsync("blazorFocus", "hamburgerBtn");
+    }
+
+    private async Task UpdateBodyScroll()
+    {
+        await JS.InvokeVoidAsync("setBodyScrollLocked", drawerOpen);
+        StateHasChanged();
+    }
+}

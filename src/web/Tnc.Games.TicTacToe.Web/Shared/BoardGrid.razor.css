@@ -1,0 +1,69 @@
+:root {
+  --cell-size: clamp(72px, 18vw, 108px);
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, var(--cell-size));
+  grid-auto-rows: var(--cell-size);
+  gap: var(--space-2, 8px);
+  justify-content: center;
+  width: max-content; /* ensure grid shrinks to fit content, not collapse under flex parents */
+  margin-inline: auto;
+  box-sizing: border-box;
+}
+
+.cell { aspect-ratio: 1 / 1; }
+@supports not (aspect-ratio:1/1) { .cell { height: var(--cell-size); } }
+
+.cell {
+  width: var(--cell-size);
+  height: var(--cell-size);
+  background: var(--color-surface) !important; /* force neutral background */
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-size: clamp(1.9rem, 5.2vw, 3.2rem);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  color: var(--color-text);
+  transition: background .15s ease, color .15s ease;
+  -webkit-appearance: none;
+  appearance: none;
+  background-clip: padding-box;
+  filter: none !important;
+  box-shadow: none !important;
+}
+
+/* Neutralize legacy mark highlight (Bootstrap sets yellow on .mark / <mark>) */
+.cell .symbol { background: transparent !important; box-shadow: none !important; filter: none !important; padding: 0; }
+/* Override any legacy .mark highlight */
+.cell .mark, .cell mark { background: transparent !important; background-color: transparent !important; color: inherit !important; box-shadow: none !important; text-shadow: none !important; filter: none !important; padding: 0 !important; border: 0 !important; }
+@media (forced-colors: active) { .cell .mark, .cell mark { forced-color-adjust: none; } }
+.symbol { line-height: 1; }
+
+/* Hover/active (no disabled attribute now) */
+.cell:not(.winner):hover { background: var(--color-surface-alt) !important; }
+.cell:not(.winner):active { background: var(--color-surface-alt) !important; box-shadow:none; }
+
+.cell.empty, .cell.filled { background: var(--color-surface) !important; }
+.cell .index { position: absolute; top: 4px; left: 6px; font-size: 0.7rem; font-weight: 600; color: var(--color-text-muted); user-select: none; pointer-events: none; }
+.cell.empty .mark { opacity: 0; }
+
+/* Win (updated animation already appended below) */
+.cell.winner { background: var(--color-accent) !important; border: 2px solid var(--color-accent-active); color: #fff; }
+.cell.winner .index { color: rgba(255,255,255,0.75); }
+
+.mark { line-height: 1; }
+
+/* Win highlight animations & responsive refinements */
+@keyframes winPop { from { transform: scale(.85); opacity:.2; } 60% { transform: scale(1.05); opacity:1; } to { transform: scale(1); opacity:1; } }
+@keyframes winGlow { from { box-shadow:0 0 0 0 rgba(59,130,246,0.0); } to { box-shadow:0 0 10px 2px rgba(59,130,246,0.55); } }
+.cell.winner { animation: winPop .55s ease-out, winGlow 2.4s ease-in-out .55s infinite alternate; position:relative; }
+@media (prefers-reduced-motion: reduce) { .cell.winner { animation: none; } }
+.cell:focus-visible { outline:3px solid var(--color-focus-ring); outline-offset:3px; }
+@media (max-width:360px){ .board { --cell-size: clamp(56px, 30vw, 84px); } }

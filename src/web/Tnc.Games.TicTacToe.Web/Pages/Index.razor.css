@@ -1,0 +1,53 @@
+.play-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+  margin: 0 auto;
+  max-width: 760px;
+}
+
+.title {
+  margin: 0.5rem 0 0.25rem;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem 1.25rem;
+  align-items: flex-end;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.control-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.starter-select, .symbol-select {
+  min-width: 120px;
+}
+
+.feedback { max-width: 540px; }
+
+.status-panel { margin-top: 0.25rem; }
+
+@media (max-width: 520px) {
+  .controls { flex-direction: column; align-items: center; }
+  .control-group { width: 100%; align-items: center; }
+  .starter-select, .symbol-select { width: 180px; }
+}

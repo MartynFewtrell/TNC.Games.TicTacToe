@@ -3,45 +3,54 @@
 @using Microsoft.AspNetCore.Components.Forms
 @inject HttpClient Http
 
-<h3>Admin</h3>
+<div class="page-shell">
+    <h1>Admin</h1>
+    <p class="intro">Administrative tools for managing rankings and viewing engine statistics. Future enhancements will include role?based access, audit history, configurable AI difficulty presets, and bulk ranking operations.</p>
 
-<div class="mb-3">
-    <label>Username</label>
-    <input class="form-control" @bind="Username" />
+    <div class="auth-grid">
+        <div class="field">
+            <label>Username</label>
+            <input class="form-control" @bind="Username" />
+        </div>
+        <div class="field">
+            <label>Password</label>
+            <input type="password" class="form-control" @bind="Password" />
+        </div>
+    </div>
+
+    <div class="actions">
+        <button class="btn btn-danger" @onclick="ResetRankings">Reset Rankings</button>
+        <button class="btn btn-secondary" @onclick="ExportRankings">Export Rankings</button>
+        <button class="btn btn-secondary" @onclick="GetStats">Get Stats</button>
+    </div>
+
+    <div class="import-block">
+        <label>Import Rankings (JSON)</label>
+        <InputFile OnChange="OnFileSelected" accept="application/json" />
+        <button class="btn btn-primary" @onclick="ImportRankings" disabled="@(selectedFile == null && string.IsNullOrEmpty(Username))">Import</button>
+    </div>
+
+    @if (exportJson is not null)
+    {
+        <div class="result-block">
+            <h2>Export</h2>
+            <pre>@exportJson</pre>
+        </div>
+    }
+
+    @if (statsJson is not null)
+    {
+        <div class="result-block">
+            <h2>Stats</h2>
+            <pre>@statsJson</pre>
+        </div>
+    }
+
+    @if (message is not null)
+    {
+        <div class="alert alert-info message">@message</div>
+    }
 </div>
-<div class="mb-3">
-    <label>Password</label>
-    <input type="password" class="form-control" @bind="Password" />
-</div>
-
-<div class="mb-3">
-    <button class="btn btn-danger" @onclick="ResetRankings">Reset Rankings</button>
-    <button class="btn btn-secondary" @onclick="ExportRankings">Export Rankings</button>
-    <button class="btn btn-secondary" @onclick="GetStats">Get Stats</button>
-</div>
-
-<div class="mb-3">
-    <label>Import Rankings (JSON)</label>
-    <InputFile OnChange="OnFileSelected" accept="application/json" />
-    <button class="btn btn-primary" @onclick="ImportRankings" disabled="@(selectedFile == null && string.IsNullOrEmpty(Username))">Import</button>
-</div>
-
-@if (exportJson is not null)
-{
-    <h4>Export</h4>
-    <pre>@exportJson</pre>
-}
-
-@if (statsJson is not null)
-{
-    <h4>Stats</h4>
-    <pre>@statsJson</pre>
-}
-
-@if (message is not null)
-{
-    <div class="alert alert-info">@message</div>
-}
 
 @code {
     private string Username { get; set; } = string.Empty;
@@ -67,8 +76,7 @@
         using var req = new HttpRequestMessage(HttpMethod.Post, "/admin/rankings/reset");
         if (auth != null) req.Headers.Authorization = auth;
         var resp = await Http.SendAsync(req);
-        if (resp.IsSuccessStatusCode) message = "Rankings reset";
-        else message = $"Reset failed: {resp.StatusCode}";
+        message = resp.IsSuccessStatusCode ? "Rankings reset" : $"Reset failed: {resp.StatusCode}";
     }
 
     private async Task ExportRankings()
@@ -107,10 +115,7 @@
         }
     }
 
-    private void OnFileSelected(InputFileChangeEventArgs e)
-    {
-        selectedFile = e.File;
-    }
+    private void OnFileSelected(InputFileChangeEventArgs e) => selectedFile = e.File;
 
     private async Task ImportRankings()
     {
@@ -126,21 +131,14 @@
         {
             json = await JSPromptForJson();
         }
-
         if (string.IsNullOrEmpty(json)) { message = "Import cancelled"; return; }
-
         using var req = new HttpRequestMessage(HttpMethod.Post, "/admin/rankings/import");
         if (auth != null) req.Headers.Authorization = auth;
         req.Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
         var resp = await Http.SendAsync(req);
-        if (resp.IsSuccessStatusCode) message = "Import successful";
-        else message = $"Import failed: {resp.StatusCode}";
+        message = resp.IsSuccessStatusCode ? "Import successful" : $"Import failed: {resp.StatusCode}";
     }
 
-    // Simple JS interop to prompt for pasted JSON (this uses browser prompt for simplicity)
     [Inject] private IJSRuntime JS { get; set; } = default!;
-    private async Task<string?> JSPromptForJson()
-    {
-        return await JS.InvokeAsync<string?>("prompt", "Paste rankings JSON to import:");
-    }
+    private async Task<string?> JSPromptForJson() => await JS.InvokeAsync<string?>("prompt", "Paste rankings JSON to import:");
 }
