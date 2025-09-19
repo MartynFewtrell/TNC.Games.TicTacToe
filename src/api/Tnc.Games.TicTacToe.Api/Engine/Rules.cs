@@ -31,6 +31,17 @@ public class GameState
         MoveHistory = moveHistory;
         HumanPlayer = Player.X;
     }
+
+    // Centralized clone method to ensure consistent cloning logic across the codebase
+    public GameState Clone()
+    {
+        var boardCopy = (Cell[]) (Board?.Clone() ?? Array.Empty<Cell>());
+        var historyCopy = MoveHistory != null ? new List<int>(MoveHistory) : new List<int>();
+        return new GameState(boardCopy, NextPlayer, Status, historyCopy)
+        {
+            HumanPlayer = this.HumanPlayer
+        };
+    }
 }
 
 public static class Rules

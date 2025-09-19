@@ -5,8 +5,8 @@
 <h3>Self-Play Training</h3>
 
 <div class="mb-3">
-    <label for="nInput">Number of games (max 10000)</label>
-    <input id="nInput" type="number" class="form-control" @bind="N" min="1" max="10000" />
+    <label for="nInput">Number of games (max 100000)</label>
+    <input id="nInput" type="number" class="form-control" @bind="N" min="1" max="100000" />
 </div>
 <div class="mb-3">
     <label for="seedInput">Seed (optional)</label>
@@ -52,7 +52,7 @@
 
         try
         {
-            var req = new { N = Math.Min(N, 10000), Seed };
+            var req = new { N = Math.Min(N, 100000), Seed };
             var resp = await Http.PostAsJsonAsync("/api/v1/selfplay/start", req);
             if (resp.StatusCode == System.Net.HttpStatusCode.Accepted || resp.IsSuccessStatusCode)
             {
@@ -160,7 +160,7 @@
         resultJson = null;
         try
         {
-            var req = new { N = Math.Min(N, 10000), Seed };
+            var req = new { N = Math.Min(N, 100000), Seed };
             var resp = await Http.PostAsJsonAsync("/api/v1/selfplay", req);
             var doc = await resp.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
             resultJson = System.Text.Json.JsonSerializer.Serialize(doc, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Tnc.Games.TicTacToe.Shared;
 
 namespace Tnc.Games.TicTacToe.Api.Domain
 {
@@ -24,21 +25,27 @@ namespace Tnc.Games.TicTacToe.Api.Domain
         }
 
         // Update Q-table for each (stateKey, move) with reward R: Q <- clamp(Q + alpha*R, -5, +5)
+        // Canonicalizes stateKey and move before applying updates so ranking store always uses canonical keys
         public static void UpdateQ(IRankingStore store, IEnumerable<(string stateKey, int move)> history, GameResult result)
         {
-            var movesCount = 0;
-            foreach (var _ in history) movesCount++;
+            if (store == null) throw new ArgumentNullException(nameof(store));
+            if (history == null) throw new ArgumentNullException(nameof(history));
+
             int idx = 0;
             foreach (var (stateKey, move) in history)
             {
                 idx++;
                 var R = ComputeReward(result, idx);
-                // delta = alpha * R
                 var delta = Alpha * R;
-                // Update using import store API: Get current (nullable)
-                var current = store.Get(stateKey, move) ?? 0.0;
+
+                // Reconstruct board and canonicalize
+                var boardStrings = BoardEncoding.FromStateKey(stateKey);
+                var (canonicalKey, transform) = Symmetry.GetCanonicalKeyAndTransform(boardStrings);
+                var canonicalMove = Symmetry.MapMoveIndex(move, transform);
+
+                var current = store.Get(canonicalKey, canonicalMove) ?? 0.0;
                 var updated = Math.Clamp(current + delta, ClampMin, ClampMax);
-                store.Set(stateKey, move, updated);
+                store.Set(canonicalKey, canonicalMove, updated);
             }
         }
     }

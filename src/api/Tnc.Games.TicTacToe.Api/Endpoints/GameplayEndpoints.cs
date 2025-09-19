@@ -118,7 +118,7 @@ namespace Tnc.Games.TicTacToe.Api.Endpoints
                         var boardStrings = Engine.Rules.ToBoardStrings(state);
                         var legalMoves = BoardEncoding.GetLegalMoves(boardStrings);
                         var stateKey = BoardEncoding.ToStateKey(boardStrings);
-                        var aiMove = policy.SelectMove(stateKey, legalMoves, rankingStore);
+                        var aiMove = policy.SelectMove(state, rankingStore);
 
                         Engine.Rules.ApplyMove(state, aiMove, state.NextPlayer);
                         // persist updated state
@@ -214,7 +214,7 @@ namespace Tnc.Games.TicTacToe.Api.Endpoints
                         var boardStrings = Engine.Rules.ToBoardStrings(state);
                         var legalMoves = BoardEncoding.GetLegalMoves(boardStrings);
                         var stateKey = BoardEncoding.ToStateKey(boardStrings);
-                        var aiMove = policy.SelectMove(stateKey, legalMoves, rankingStore);
+                        var aiMove = policy.SelectMove(state, rankingStore);
                         Engine.Rules.ApplyMove(state, aiMove, state.NextPlayer);
                         aiApplied = 1;
                         activity?.SetTag("aiMoveIndex", aiMove);
